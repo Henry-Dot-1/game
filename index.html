@@ -67,32 +67,48 @@
             stroke: #f0e6d0;
             stroke-width: 2.2;
         }
-        #settings-panel {
-            position: absolute;
-            top: 80px;
-            right: 20px;
-            background: rgba(15, 15, 30, 0.95);
-            backdrop-filter: blur(18px);
-            color: #eee;
-            padding: 24px 28px;
-            border-radius: 18px;
-            z-index: 35;
-            min-width: 220px;
-            box-shadow: 0 12px 50px rgba(0, 0, 0, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            opacity: 0;
-            transform: translateY(-10px) scale(0.96);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            pointer-events: none;
-            max-height: 65vh;
-            overflow-y: auto;
-            padding-bottom: 20px;
-        }
-        #settings-panel.open {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
+#settings-panel {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    background: rgba(15, 15, 30, 0.95);
+    backdrop-filter: blur(18px);
+    color: #eee;
+    padding: 24px 28px;
+    border-radius: 18px;
+    z-index: 35;
+    min-width: 220px;
+    box-shadow: 0 12px 50px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;                 /* всё внутри заблокировано */
+    max-height: 65vh;
+    overflow-y: auto;
+    padding-bottom: 20px;
+}
+
+#settings-panel.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;                 /* всё внутри разблокировано */
+}
+
+/* Важно: перекрыть любые попытки внутренних элементов быть кликабельными */
+#settings-panel * {
+    pointer-events: none;
+}
+
+#settings-panel.open * {
+    pointer-events: auto;
+}
+
+#settings-panel.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto; /* ← открыто — можно кликать */
+}
         #settings-panel h3 {
             margin: 0 0 16px 0;
             text-align: center;
@@ -194,7 +210,7 @@
             cursor: pointer;
             transition: background 0.2s, transform 0.15s;
             font-weight: 500;
-            pointer-events: auto;
+
         }
         .btn-row button:hover,
         #settings-panel button:hover {
@@ -236,7 +252,7 @@
             font-size: 14px;
             cursor: pointer;
             transition: background 0.2s;
-            pointer-events: auto;
+
         }
         #close-settings:hover {
             background: rgba(255, 255, 255, 0.14);
@@ -663,7 +679,7 @@
                 <button id="btn-restart-level">↻ Уровень</button>
                 <button id="btn-reset-game" class="danger">⟳ Сброс</button>
             </div>
-            <button id="btn-fullscreen" style="width:100%;margin-top:8px;padding:8px 0;background:rgba(255,255,255,0.06);color:#eee;border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:14px;cursor:pointer;pointer-events:auto;">⛶ На весь экран</button>
+            <button id="btn-fullscreen" style="width:100%;margin-top:8px;padding:8px 0;background:rgba(255,255,255,0.06);color:#eee;border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:14px;cursor:pointer;">⛶ На весь экран</button>
             <button id="close-settings">Закрыть</button>
         </div>
 
@@ -759,10 +775,9 @@ function applyQualitySettings() {
             assetsLoaded++;
             const pct = Math.round((assetsLoaded / totalAssets) * 100);
             loadProgressEl.textContent = pct + '%';
-            if (assetsLoaded >= totalAssets) {
-                loadingEl.classList.add('hidden');
-                setTimeout(() => { loadingEl.style.display = 'none'; }, 800);
-            }
+if (assetsLoaded >= totalAssets) {
+    loadingEl.style.display = 'none';
+}
         }
 
         function loadImg(src) {
@@ -925,6 +940,10 @@ function normalizeSprites(arr, targetW, targetH) {
         //normalizeSprites(jumpImgs, targetW, targetH);
         
             while (assetsLoaded < totalAssets) assetLoaded();
+
+            if (startImages.length > 0 && document.getElementById('intro-img')) {
+    document.getElementById('intro-img').src = startImages[0].src;
+}
         }
 
         // ---- AUDIO / MUSIC ----
@@ -2671,17 +2690,14 @@ applyControlMode(savedMode);
 
 settingsIcon.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (!state.gameStarted) return;
     settingsPanel.classList.toggle('open');
 });
 
 closeSettingsBtn.addEventListener('click', () => {
-    if (!state.gameStarted) return;
     settingsPanel.classList.remove('open');
 });
 
 radioKeyboard.addEventListener('change', (e) => {
-    if (!state.gameStarted) return;
     if (e.target.checked) {
         localStorage.setItem('controlMode', 'keyboard');
         applyControlMode('keyboard');
@@ -2689,7 +2705,7 @@ radioKeyboard.addEventListener('change', (e) => {
 });
 
 radioTouch.addEventListener('change', (e) => {
-    if (!state.gameStarted) return;
+
     if (e.target.checked) {
         localStorage.setItem('controlMode', 'touch');
         applyControlMode('touch');
@@ -2723,7 +2739,6 @@ btnResetGame.addEventListener('click', () => {
 });
 
 btnFullscreen.addEventListener('click', () => {
-    if (!state.gameStarted) return;
     settingsPanel.classList.remove('open');
     if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
@@ -2733,18 +2748,18 @@ btnFullscreen.addEventListener('click', () => {
 });
 
 musicVolumeSlider.addEventListener('input', () => {
-    if (!state.gameStarted) return;
+
     musicVolume = parseInt(musicVolumeSlider.value) / 100;
     updateMusicVolume();
 });
 
 musicToggle.addEventListener('change', () => {
-    if (!state.gameStarted) return;
+
     toggleMusic(musicToggle.checked);
 });
 
 musicGenreSelect.addEventListener('change', () => {
-    if (!state.gameStarted) return;
+
     switchGenre(musicGenreSelect.value);
 });
         // ---- TOUCH CONTROLS ----
